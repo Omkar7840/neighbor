@@ -27,10 +27,20 @@ const Browse: React.FC = () => {
         .eq('is_available', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching items:', error);
+        // If tables don't exist yet, just show empty state
+        if (error.code === '42P01') {
+          setItems([]);
+          return;
+        }
+        throw error;
+      }
       setItems(data || []);
     } catch (error) {
-      toast.error('Error loading items');
+      console.error('Error loading items:', error);
+      // Don't show error toast if tables don't exist yet
+      setItems([]);
     } finally {
       setLoading(false);
     }
