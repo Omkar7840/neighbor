@@ -63,10 +63,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        // If the users table doesn't exist yet, create a minimal user object
+        if (error.code === '42P01') {
+          const { data: authUser } = await supabase.auth.getUser();
+          if (authUser.user) {
+            const fallbackUser = {
+              id: authUser.user.id,
+              email: authUser.user.email || '',
+              full_name: authUser.user.user_metadata?.full_name || 'User',
+              avatar_url: null,
+              bio: null,
+              location: null,
+              phone: null,
+              rating: 5.0,
+              total_reviews: 0,
+              items_shared: 0,
+              items_borrowed: 0,
+              created_at: new Date().toISOString()
+            };
+            setUser(fallbackUser);
+          }
+        }
+        return;
+      }
       setUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Set loading to false even if there's an error to prevent infinite loading
     } finally {
       setLoading(false);
     }
